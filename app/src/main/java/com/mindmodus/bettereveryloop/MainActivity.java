@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences prefs;
     PendingIntent broadcast;
     AlarmManager alarmManager;
+    Call<Gfycat> leagues;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,26 +78,9 @@ public class MainActivity extends AppCompatActivity {
 
         RedditBetterEveryLoopApi apiEndpoint = retrofit.create(RedditBetterEveryLoopApi.class);
 
-        final Call<Gfycat> leagues = apiEndpoint.getGifs();
+        leagues = apiEndpoint.getGifs();
         if (checkIfTimeIsUp()) {
-            leagues.enqueue(new Callback<Gfycat>() {
-                @Override
-                public void onResponse(Call<Gfycat> call, Response<Gfycat> response) {
-                    Log.d("apiCall", "success");
-                    count.setText(String.valueOf(gifCount));
-                    data = response.body();
-                    adapter.addAll(data.getGfycats());
-                    cardStackView.setAdapter(adapter);
-                    setup();
-
-                }
-
-                @Override
-                public void onFailure(Call<Gfycat> call, Throwable t) {
-                    Toast.makeText(MainActivity.this, "Something went wrong", Toast.LENGTH_SHORT).show();
-                }
-
-            });
+            getGifs();
         }
 
         myObservable = Observable.create(new ObservableOnSubscribe<Boolean>() {
@@ -129,9 +113,9 @@ public class MainActivity extends AppCompatActivity {
                 setCount(gifCount);
                 count.setText(String.valueOf(gifCount));
                 if (gifCount == 0) {
-                    scheduleNotificationo();
                     Timer _timer = new Timer();
                     _timer.schedule(new MyTimeTask(), 60000);
+                    scheduleNotificationo();
                     comeBack.setText("You seen all the gifs for today");
                     comeBack.setVisibility(View.VISIBLE);
                 }
@@ -150,12 +134,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCardClicked(int index) {
                 Log.d("CardStackView", "onCardClicked: " + index);
-                gifState = true;
+                gifState = !gifState;
                 myObservable.subscribe(adapter.myObserver);
             }
         });
     }
-
 
     public int getCount() {
         return prefs.getInt("count", (int) System.currentTimeMillis());
@@ -181,6 +164,27 @@ public class MainActivity extends AppCompatActivity {
     private void paginate() {
         cardStackView.setPaginationReserved();
         adapter.notifyDataSetChanged();
+    }
+
+    private void getGifs() {
+        leagues.enqueue(new Callback<Gfycat>() {
+            @Override
+            public void onResponse(Call<Gfycat> call, Response<Gfycat> response) {
+                Log.d("apiCall", "success");
+                count.setText(String.valueOf(gifCount));
+                data = response.body();
+                adapter.addAll(data.getGfycats());
+                cardStackView.setAdapter(adapter);
+                setup();
+
+            }
+
+            @Override
+            public void onFailure(Call<Gfycat> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Something went wrong", Toast.LENGTH_SHORT).show();
+            }
+
+        });
     }
 
     private void scheduleNotificationo() {
