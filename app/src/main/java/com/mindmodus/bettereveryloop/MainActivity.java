@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 if (gifCount == 0) {
                     Timer _timer = new Timer();
                     _timer.schedule(new MyTimeTask(), 60000);
-                    scheduleNotificationo();
+                    scheduleNotification();
                     comeBack.setText("You seen all the gifs for today");
                     comeBack.setVisibility(View.VISIBLE);
                 }
@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else {
             count.setText(String.valueOf(0));
-            comeBack.setText("Come Back in " + "do minuta");
+            comeBack.setText("Come Back Tomorrow on 8am");
             comeBack.setVisibility(View.VISIBLE);
             return false;
         }
@@ -182,12 +182,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<Gfycat> call, Throwable t) {
                 Toast.makeText(MainActivity.this, "Something went wrong", Toast.LENGTH_SHORT).show();
+                count.setVisibility(View.GONE);
             }
 
         });
     }
 
-    private void scheduleNotificationo() {
+    private void scheduleNotification() {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, 1);
         cal.add(Calendar.SECOND, 0);

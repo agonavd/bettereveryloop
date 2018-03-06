@@ -91,8 +91,6 @@ public class GifCardAdapter extends ArrayAdapter<GfycatGifData>{
                             if (state) {
                                 Log.d("position", "Position is" + position);
                                 anim.start();
-                            } else {
-                                Log.d("observer", "not observed");
                             }
                         }
 
