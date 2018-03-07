@@ -28,10 +28,15 @@ import java.util.TimerTask;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
@@ -47,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences prefs;
     PendingIntent broadcast;
     AlarmManager alarmManager;
-    Call<Gfycat> leagues;
+    Single<Gfycat> leagues;
+    Retrofit retrofit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,16 +77,20 @@ public class MainActivity extends AppCompatActivity {
                 .setLenient()
                 .create();
 
-        Retrofit retrofit = new Retrofit.Builder()
+        retrofit = new Retrofit.Builder()
                 .baseUrl("https://api.gfycat.com")
                 .addConverterFactory(GsonConverterFactory.create(gson))
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
 
         RedditBetterEveryLoopApi apiEndpoint = retrofit.create(RedditBetterEveryLoopApi.class);
 
         leagues = apiEndpoint.getGifs();
         if (checkIfTimeIsUp()) {
-            getGifs();
+            retrofit.create(RedditBetterEveryLoopApi.class).getGifs()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(this::handleResults, this::handleErrors);
         }
 
         myObservable = Observable.create(new ObservableOnSubscribe<Boolean>() {
@@ -91,6 +101,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private void handleResults(Gfycat gfycat) {
+        adapter.addAll(gfycat.getGfycats());
+        cardStackView.setAdapter(adapter);
+        setup();
+    }
+
+    private void handleErrors(Throwable throwable) {
+        Log.e("Observer", throwable.toString());
     }
 
     private void setup() {
@@ -164,28 +184,6 @@ public class MainActivity extends AppCompatActivity {
     private void paginate() {
         cardStackView.setPaginationReserved();
         adapter.notifyDataSetChanged();
-    }
-
-    private void getGifs() {
-        leagues.enqueue(new Callback<Gfycat>() {
-            @Override
-            public void onResponse(Call<Gfycat> call, Response<Gfycat> response) {
-                Log.d("apiCall", "success");
-                count.setText(String.valueOf(gifCount));
-                data = response.body();
-                adapter.addAll(data.getGfycats());
-                cardStackView.setAdapter(adapter);
-                setup();
-
-            }
-
-            @Override
-            public void onFailure(Call<Gfycat> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Something went wrong", Toast.LENGTH_SHORT).show();
-                count.setVisibility(View.GONE);
-            }
-
-        });
     }
 
     private void scheduleNotification() {
