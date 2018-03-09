@@ -7,11 +7,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.gson.Gson;
@@ -26,22 +26,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Scheduler;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
-    Gfycat data;
     CardStackView cardStackView;
     GifCardAdapter adapter;
     boolean gifState = false;
@@ -52,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences prefs;
     PendingIntent broadcast;
     AlarmManager alarmManager;
-    Single<Gfycat> leagues;
     Retrofit retrofit;
+    ContentLoadingProgressBar loadingProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         adapter = new GifCardAdapter(getApplicationContext());
+
+        loadingProgressBar = findViewById(R.id.loadingBar);
         cardStackView = findViewById(R.id.gifCardStack);
         count = findViewById(R.id.gifCount);
         comeBack = findViewById(R.id.comeBack);
@@ -83,9 +77,6 @@ public class MainActivity extends AppCompatActivity {
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
 
-        RedditBetterEveryLoopApi apiEndpoint = retrofit.create(RedditBetterEveryLoopApi.class);
-
-        leagues = apiEndpoint.getGifs();
         if (checkIfTimeIsUp()) {
             retrofit.create(RedditBetterEveryLoopApi.class).getGifs()
                     .subscribeOn(Schedulers.io())
@@ -93,12 +84,9 @@ public class MainActivity extends AppCompatActivity {
                     .subscribe(this::handleResults, this::handleErrors);
         }
 
-        myObservable = Observable.create(new ObservableOnSubscribe<Boolean>() {
-            @Override
-            public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
-                emitter.onNext(gifState);
-                emitter.onComplete();
-            }
+        myObservable = Observable.create(emitter -> {
+            emitter.onNext(gifState);
+            emitter.onComplete();
         });
 
     }
@@ -107,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.addAll(gfycat.getGfycats());
         cardStackView.setAdapter(adapter);
         setup();
+        loadingProgressBar.hide();
     }
 
     private void handleErrors(Throwable throwable) {

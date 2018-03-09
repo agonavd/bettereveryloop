@@ -46,5 +46,13 @@
         android:textSize="25sp"
         android:text="20"/>
 
+    <android.support.v4.widget.ContentLoadingProgressBar
+        android:id="@+id/loadingBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_centerInParent="true"
+        />
+
 
 </RelativeLayout>
