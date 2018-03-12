@@ -18,12 +18,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mindmodus.bettereveryloop.interfaces.RedditBetterEveryLoopApi;
 import com.mindmodus.bettereveryloop.models.Gfycat;
+import com.mindmodus.bettereveryloop.models.GfycatGifData;
 import com.yuyakaido.android.cardstackview.CardStackView;
 import com.yuyakaido.android.cardstackview.SwipeDirection;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.List;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -41,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     TextView count;
     TextView comeBack;
     int gifCount = 20;
-    SharedPreferences prefs;
     PendingIntent broadcast;
     AlarmManager alarmManager;
     Retrofit retrofit;
@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Fresco.initialize(this);
-        prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         adapter = new GifCardAdapter(getApplicationContext());
 
@@ -77,11 +76,16 @@ public class MainActivity extends AppCompatActivity {
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
 
-        if (checkIfTimeIsUp()) {
+        if (getTimeState("timeState", this)) {
             retrofit.create(RedditBetterEveryLoopApi.class).getGifs()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(this::handleResults, this::handleErrors);
+        } else {
+            count.setText(String.valueOf(0));
+            comeBack.setText("Come Back Tomorrow on 8am");
+            comeBack.setVisibility(View.VISIBLE);
+            loadingProgressBar.setVisibility(View.GONE);
         }
 
         myObservable = Observable.create(emitter -> {
@@ -103,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setup() {
-
         cardStackView.setCardEventListener(new CardStackView.CardEventListener() {
             @Override
             public void onCardDragging(float percentX, float percentY) {
@@ -119,11 +122,9 @@ public class MainActivity extends AppCompatActivity {
                     paginate();
                 }
                 gifCount--;
-                setCount(gifCount);
                 count.setText(String.valueOf(gifCount));
                 if (gifCount == 0) {
-                    Timer _timer = new Timer();
-                    _timer.schedule(new MyTimeTask(), 60000);
+                    setTimeState("timeState", false, MainActivity.this);
                     scheduleNotification();
                     comeBack.setText("You seen all the gifs for today");
                     comeBack.setVisibility(View.VISIBLE);
@@ -149,27 +150,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public int getCount() {
-        return prefs.getInt("count", (int) System.currentTimeMillis());
-    }
-
-    public void setCount(int count) {
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt("count", count);
-        editor.commit();
-    }
-
-    public boolean checkIfTimeIsUp() {
-        if (getCount() == 20) {
-            return true;
-        } else {
-            count.setText(String.valueOf(0));
-            comeBack.setText("Come Back Tomorrow on 8am");
-            comeBack.setVisibility(View.VISIBLE);
-            return false;
-        }
-    }
-
     private void paginate() {
         cardStackView.setPaginationReserved();
         adapter.notifyDataSetChanged();
@@ -182,11 +162,16 @@ public class MainActivity extends AppCompatActivity {
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), broadcast);
     }
 
-    private class MyTimeTask extends TimerTask {
-        public void run() {
-            Log.d("task", "run");
-            setCount(20);
-        }
+    public boolean getTimeState(String key, Context context) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        return preferences.getBoolean(key, true);
+    }
+
+    public void setTimeState(String key, boolean state, Context context) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(key, state);
+        editor.commit();
     }
 
 }

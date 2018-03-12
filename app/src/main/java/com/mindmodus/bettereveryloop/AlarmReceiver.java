@@ -10,6 +10,8 @@ import android.support.v4.app.TaskStackBuilder;
 
 
 public class AlarmReceiver extends BroadcastReceiver {
+    MainActivity mainActivity = new MainActivity();
+
     @Override
     public void onReceive(Context context, Intent intent) {
         Intent notificationIntent = new Intent(context, MainActivity.class);
@@ -29,5 +31,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(0, builder.build());
+
+        mainActivity.setTimeState("timeState", true, context);
     }
 }
