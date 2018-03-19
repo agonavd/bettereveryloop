@@ -16,16 +16,15 @@ import android.widget.TextView;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mindmodus.bettereveryloop.interfaces.RedditBetterEveryLoopApi;
+import com.mindmodus.bettereveryloop.interfaces.GfyCatApi;
 import com.mindmodus.bettereveryloop.models.Gfycat;
-import com.mindmodus.bettereveryloop.models.GfycatGifData;
 import com.yuyakaido.android.cardstackview.CardStackView;
 import com.yuyakaido.android.cardstackview.SwipeDirection;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -35,30 +34,34 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
+    @BindView(R.id.gifCardStack)
     CardStackView cardStackView;
-    GifCardAdapter adapter;
-    boolean gifState = false;
-    Observable<Boolean> myObservable;
+
+    @BindView(R.id.gifCount)
     TextView count;
+
+    @BindView(R.id.comeBack)
     TextView comeBack;
-    int gifCount = 20;
+
+    @BindView(R.id.loadingBar)
+    ContentLoadingProgressBar loadingProgressBar;
+
+    Observable<Boolean> myObservable;
+    GifCardAdapter adapter;
     PendingIntent broadcast;
     AlarmManager alarmManager;
     Retrofit retrofit;
-    ContentLoadingProgressBar loadingProgressBar;
+    boolean gifState = false;
+    int gifCount = 20;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Fresco.initialize(this);
-
+        ButterKnife.bind(this);
         adapter = new GifCardAdapter(getApplicationContext());
 
-        loadingProgressBar = findViewById(R.id.loadingBar);
-        cardStackView = findViewById(R.id.gifCardStack);
-        count = findViewById(R.id.gifCount);
-        comeBack = findViewById(R.id.comeBack);
         comeBack.setVisibility(View.GONE);
 
         alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -77,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         if (getTimeState("timeState", this)) {
-            retrofit.create(RedditBetterEveryLoopApi.class).getGifs()
+            retrofit.create(GfyCatApi.class).getGifs()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(this::handleResults, this::handleErrors);

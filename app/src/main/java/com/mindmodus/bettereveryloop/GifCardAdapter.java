@@ -20,6 +20,8 @@ import com.facebook.drawee.view.SimpleDraweeView;
 import com.facebook.imagepipeline.image.ImageInfo;
 import com.mindmodus.bettereveryloop.models.GfycatGifData;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 
@@ -28,9 +30,16 @@ public class GifCardAdapter extends ArrayAdapter<GfycatGifData>{
     Observer myObserver;
     ControllerListener controllerListener;
 
-    private static class ViewHolder {
-        private TextView name;
-        public SimpleDraweeView gifHolder;
+    static class ViewHolder {
+        @BindView(R.id.title)
+        TextView name;
+
+        @BindView(R.id.gif)
+        SimpleDraweeView gifHolder;
+
+        public ViewHolder(View contentView) {
+            ButterKnife.bind(this, contentView);
+        }
     }
 
     public GifCardAdapter(Context context) {
@@ -43,11 +52,9 @@ public class GifCardAdapter extends ArrayAdapter<GfycatGifData>{
 
         final ViewHolder holder;
         if (contentView == null) {
-            holder = new ViewHolder();
             LayoutInflater inflater = LayoutInflater.from(getContext());
             contentView = inflater.inflate(R.layout.gif_card_view, parent, false);
-            holder.name = contentView.findViewById(R.id.title);
-            holder.gifHolder = contentView.findViewById(R.id.gif);
+            holder = new ViewHolder(contentView);
             contentView.setTag(holder);
         } else {
             holder = (ViewHolder) contentView.getTag();
@@ -108,5 +115,4 @@ public class GifCardAdapter extends ArrayAdapter<GfycatGifData>{
             }
         };
     }
-
 }
