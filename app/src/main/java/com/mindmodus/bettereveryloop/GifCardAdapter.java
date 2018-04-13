@@ -70,6 +70,7 @@ public class GifCardAdapter extends ArrayAdapter<GfycatGifData>{
                 .setAutoPlayAnimations(false)
                 .build();
         holder.gifHolder.setController(controller);
+        holder.gifHolder.getHierarchy().setProgressBarImage(new CircleProgressBarDrawable());
 
         return contentView;
     }
